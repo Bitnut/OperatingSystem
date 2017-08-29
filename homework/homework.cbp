@@ -31,7 +31,13 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="MFD.cpp" />
+		<Unit filename="MFD.h" />
+		<Unit filename="UFD.cpp" />
+		<Unit filename="UFD.h" />
 		<Unit filename="main.cpp" />
+		<Unit filename="userDashboard.cpp" />
+		<Unit filename="userDashboard.h" />
 		<Extensions>
 			<envvars />
 			<code_completion />
