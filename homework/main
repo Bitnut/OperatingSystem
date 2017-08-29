@@ -1,0 +1,90 @@
+#include<iostream>
+#include<ctime>
+using namespace std;
+
+void print() {
+	cout << "1.创建文件" << endl;
+	cout << "2.打开文件" << endl;
+	cout << "3.文件写入" << endl;
+	cout << "4.文件读取" << endl;
+	cout << "5.关闭文件" << endl;
+	cout << "6.删除文件" << endl;
+	cout << "7.退出系统" << endl;
+}
+
+
+
+int main() {
+
+
+	System sys;
+	int order=0;
+
+	while (order!=7) {
+		system("cls");		int descriptor;
+		int protect;
+		int max;
+		int desc;
+		int length;
+		int a;
+		sys.print();
+		print();
+		char name[10] = { 0 };
+		cout << "请输入操作指令:";
+		cin >> order;
+		switch (order) {
+		case 1:
+			cout << "请输入文件名:";
+			cin >> name;
+			cout << "请输入文件大小:";
+			cin >> max;
+			cout << "请输入文件保护方式(仅读1 仅写2 读写为3):";
+			cin >> protect;
+			sys.create(name, max, protect);
+			break;
+
+		case 2:
+			cout << "请输入文件描述符以及保护方式:";
+			cin >> descriptor;
+			cin >> protect;
+			sys.open(descriptor, protect);
+			break;
+
+		case 3:
+			cout << "请输入文件描述符以及字节长度:";
+			cin >> desc >> length;
+			sys.write(desc, length);
+			break;
+
+		case 4:
+			cout << "请输入文件描述符以及字节长度:";
+			cin >> desc >> length;
+			sys.read(desc, length);
+			cout << endl;
+			system("pause");
+			break;
+
+		case 5:
+			cout << "请输入文件描述符:";
+			cin >> a;
+			sys.close(a);
+			break;
+
+		case 6:
+			cout << "请输入文件描述符:";
+			cin >> a;
+			sys.delete_file(a);
+			continue;
+
+		}
+	}
+
+
+
+
+	system("pause");
+	return 0;
+}
+
+
+
