@@ -1,8 +1,3 @@
-#include "MFD.h"
-#include<vector>
-#include"common.h"
-#include"Fileopera.h"
-#include"userDashboard.h"
 #include<iostream>
 #include<sstream>
 #include<stdlib.h>
@@ -10,6 +5,10 @@
 #include<math.h>
 #include<cstring>
 #include<vector>
+#include<ctime>
+#include "MFD.h"
+#include"fileControl.h"
+#include"userDashboard.h"
 using namespace std;
 
 extern cmd cmd_in;
@@ -19,13 +18,12 @@ extern vector<cluster> FileCluster;
 extern vector<MFD> UsrInfo;
 extern vector< vector<UOF> > FileState;
 extern UOF StateInput;
-extern vector< cluster> FileCluster;
 extern cluster ClusterInput;
 extern MFD UsrInput;
-extern int num; //Ñ¡ÏîÑ¡Ôñ
+extern int num;
 extern int Headnum;
 extern int curID;
-
+extern int countOpen;
 
 
 void do_Chmod()
@@ -51,8 +49,9 @@ void do_Chmod()
 			break;
 		}
 	}
-	cout << "修改权限成功!"<<endl;
+	cout << "success!"<<endl;
 }
+
 void do_Chown()
 {
 	// Chown filename new_owner
@@ -70,8 +69,6 @@ void do_Chown()
 			break;
 		}
 	}
-
-	 //删除状态栏
 	 vector<UOF>::iterator it_num1;
 	 for (it_num1 = FileState[curID].begin(); it_num1 != FileState[curID].end(); it_num1++)
 	 {
@@ -88,7 +85,6 @@ void do_Chown()
 		 }
 	 }
 
-	 //添加至新用户的文件栏和状态栏
 	int tempID;
 	for (int i = 0; i < UsrInfo.size(); i++)
 	{
@@ -99,7 +95,7 @@ void do_Chown()
 		}
 	}
 	int flag = 0;
-	//是否存在同名文件，是否替换等
+	// check for re-name file
 	for (int i = 0; i < FileInfo[tempID].size(); i++)
 	{
 		if (strcmp(FileInfo[tempID][i].filename, cmd_in.cmdNum[2].c_str()) == 0)
@@ -112,13 +108,14 @@ void do_Chown()
 	{
 		FileInfo[tempID].push_back(FileInput);
 		FileState[tempID].push_back(StateInput);
-		cout << "改变文件拥有者成功！" << endl;
+		cout << "success！" << endl;
 	}
 	else
 	{
-		cout << "此用户中已经拥有本名称的文件！" << endl;
+		cout << "file named "<<""<<" already exists" << endl;
 	}
 }
+
 void do_Mv()
 {
 	//Mv srcFile desFile
@@ -139,121 +136,9 @@ void do_Mv()
 			break;
 		}
 	}
-	cout << "重命名文件成功" << endl;
+	cout << "success" << endl;
 }
-//void do_Write();
-void doTempWrite();
-void make_new_copy()
-{
-	//Type filename
-	string Tempbuff;
-	int addre;
-	for (int i = 0; i < FileInfo[curID].size(); i++)
-	{
-		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
-		{
-			addre = FileInfo[curID][i].addr;
-			break;
-		}
-	}
-	int index;
-	for (int i = 0; i < FileState[curID].size(); i++)
-	{
-		if (strcmp(FileState[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
-		{
-			index = i;
-			break;
-		}
-	}
 
-	while (1)
-	{
-		if (FileCluster[addre].nextNum == addre)
-		{
-			for (int i = 0; i < FileState[curID][index].write_poit; i++)
-			{
-				//cout << FileCluster[addre].data[i];
-				Tempbuff += FileCluster[addre].data[i];
-			}
-			break;
-		}
-		else
-		{
-			for (int i = 0; i < 256; i++)
-			{
-				//cout << FileCluster[addre].data[i];
-				Tempbuff += FileCluster[addre].data[i];
-			}
-			if (FileCluster[addre].nextNum != addre)
-			{
-				addre = FileCluster[addre].nextNum;
-			}
-			else
-				break;
-		}
-	}
-
-	//Write	filename buffer nbytes 写文件   物理空间68
-	cmd_in.cmdNum[0] = "Write";
-	cmd_in.cmdNum[1] = cmd_in.cmdNum[2];
-	cmd_in.cmdNum[2] = Tempbuff;
-	stringstream ss;
-	ss << Tempbuff.length();
-	string curtp;
-	ss >> curtp;
-	cmd_in.cmdNum[3] = curtp;
-	//cout << cmd_in.cmd_num[0] << " " << cmd_in.cmd_num[1] << "  " << cmd_in.cmd_num[2] << " " << cmd_in.cmd_num[3] << endl;
-	//do_Write();
-	doTempWrite();
-
-}
-void do_Create();
-void do_Copy()
-{
-	//Copy  srcFile desFile
-	int address;
-	for (int i = 0; i < FileInfo[curID].size(); i++)
-	{
-		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
-		{
-			address = FileInfo[curID][i].addr;
-			break;
-		}
-	}
-
-	int flag = 0;
-	for (int i = 0; i < FileInfo[curID].size(); i++)
-	{
-		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[2].c_str()) == 0)
-		{
-			flag = 1;
-			break;
-		}
-	}
-	string s1, s2, s3;
-	s1 = cmd_in.cmdNum[0];
-	s2 = cmd_in.cmdNum[1];
-	s3 = cmd_in.cmdNum[2];
-	//新的文件名存在....
-	if (flag)
-	{
-		make_new_copy();
-	}
-	else   //新的文件名不存在的话要新建一个
-	{
-		//Create name mode
-		cmd_in.cmdNum[0]="Create";
-		cmd_in.cmdNum[1]=cmd_in.cmdNum[2];
-		cmd_in.cmdNum[2]="2";
-		do_Create();
-		cmd_in.cmdNum[0] = s1;
-		cmd_in.cmdNum[1] = s2;
-		cmd_in.cmdNum[2] = s3;
-		make_new_copy();
-
-	}
-
-}
 void do_dir()
 {
 	for (int i = 0; i < FileInfo[curID].size(); i++)
@@ -263,6 +148,7 @@ void do_dir()
 	cout << endl;
 
 }
+
 void do_Type()
 {
     //Type filename
@@ -284,47 +170,32 @@ void do_Type()
 			break;
 		}
 	}
-
-	while (1)
-	{
-		if (FileCluster[address].nextNum == address)
-		{
-			for (int i = 0; i < FileState[curID][index].write_poit; i++)
-				cout << FileCluster[address].data[i];
-			break;
-		}
-		else
-		{
-			for (int i = 0; i < 256; i++)
-			{
-				cout << FileCluster[address].data[i];
-			}
-			if (FileCluster[address].nextNum != address)
-			{
-				address = FileCluster[address].nextNum;
-			}
-			else
-				break;
-		}
-	}
-	cout << endl;
+        cout<<"filename: \t\t"<< FileState[curID][index].filename<<endl;
+        cout<<"protect: \t\t"<< FileState[curID][index].protect<<endl;
+        cout<<"state: \t\t\t"<< FileState[curID][index].state<<endl;
+        cout<<"readpoint: \t\t"<< FileState[curID][index].read_poit<<endl;
+        cout<<"writepoint: \t\t"<< FileState[curID][index].write_poit<<endl;
+        cout<<"first block address:\t"<<address<<endl;
 }
+
 void do_Passwd()
 {
 	//Passwd oldPwd  newPwd
 	if (strcmp(UsrInfo[curID].usrpass, cmd_in.cmdNum[1].c_str()) == 0)
 	{
 		strcpy(UsrInfo[curID].usrpass, cmd_in.cmdNum[2].c_str());
-		cout << "密码修改成功" << endl;
+		cout << "success!" << endl;
 	}
 	else
-		cout << "密码有误" << endl;
+		cout << "Wrong password!" << endl;
 }
+
 void do_sysc()
 {
 	out_to_file();
-	cout << "写入到磁盘成功!" << endl;
+	cout << "Successfully syn!" << endl;
 }
+
 void do_Login()
 {
 	//Login	userName pwd
@@ -333,35 +204,38 @@ void do_Login()
 	{
 		if (strcmp(cmd_in.cmdNum[1].c_str(), UsrInfo[i].usrname) == 0 && strcmp(cmd_in.cmdNum[2].c_str(), UsrInfo[i].usrpass) == 0)
 		{
-			curID = i;   //全局记录登陆者的ID
+			curID = i;
 			flag = 1;
 			break;
 		}
 	}
 	if (flag)
 	{
-		cout << "您已经登陆成功！" << endl;
+		cout << "success！" << endl;
 		return;
 	}
 	else
 	{
-		cout << "您的用户名不存在,请重新登陆!" << endl;
+		cout << "Not exits!" << endl;
 	}
 }
+
 void do_exit()
 {
 	do_sysc();
-	cout << "成功退出!" << endl;
+	cout << "Successfully out, see you!" << endl;
 	exit(0);
 }
+
 void do_Logout()
 {
 	/*cout << "您是否已经使用sysc命令保存信息至磁盘？Y/N" << endl;
 	char c;
 	c = getchar();
 	if (c == 'Y')*/
-	cout << "注销成功，请选择用户登陆!" << endl;
+	cout << "Success! Please choose a user to login" << endl;
 }
+
 void do_register()
 {
 	//Register usrName pwd
@@ -383,30 +257,31 @@ void do_register()
 			UsrInput.link = UsrInfo.size();
 			UsrInfo.push_back(UsrInput);
 
-			//为新的用户开辟空间
 			vector<UFD> t;
 			FileInfo.push_back(t);
 
 			vector<UOF> temp;
 		    FileState.push_back(temp);
 
-			cout << "您的用户名创建成功!" << endl;
+			cout << "success!" << endl;
 
 		}
 		else
 		{
-			cout << "用户名已经存在，请重新注册" << endl;
+			cout << "Already exists" << endl;
 		}
 	}
 	else
-		cout << "总人数已满，无法注册" << endl;
+		cout << "Bigger than 16 users now! Cannot create a user" << endl;
 }
+
 void do_Create()
 {
 	//create name mode
 	if (FileInfo[curID].size() < 16)
 	{
 		int flag = 1;
+		//check if there's the same name file
 		for (int i = 0; i < FileInfo[curID].size(); i++)
 		{
 			if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
@@ -417,7 +292,7 @@ void do_Create()
 		}
 		if (!flag)
 		{
-			cout << "不能建立同名文件！" << endl;
+			cout << FileInput.filename << "EXITS！" << endl;
 			return;
 		}
 
@@ -426,22 +301,25 @@ void do_Create()
 		ss << cmd_in.cmdNum[2];
 		int temp;
 		ss >> temp;
+		FileInput.length = temp;
+		ss.clear();
+		ss << cmd_in.cmdNum[3];
+		ss >> temp;
+		cout<< temp <<endl;
 		FileInput.protect = temp;
-		FileInput.length = 0;
-		//要处理接下来的内容存储...
 		for (int i = 0; i < FileCluster.size(); i++)
 		{
-			if (FileCluster[i].is_data == 0)//盘中没有数据，
+		    int ran = rand() % 68;
+			if (FileCluster[ran].is_data == 0)
 			{
-				FileInput.addr = i;
-				FileCluster[i].is_data = 1;
+				FileInput.addr = ran;
+				FileCluster[ran].is_data = 1;
 				break;
 			}
 		}
 		FileInfo[curID].push_back(FileInput);
-		cout << "文件创建成功" << endl;
+		cout << "build success!" << endl;
 
-		//状态栏
 		strcpy(StateInput.filename, cmd_in.cmdNum[1].c_str());
 		StateInput.state = 0;
 		StateInput.protect = FileInput.protect;
@@ -452,10 +330,9 @@ void do_Create()
 
 	}
 	else
-		cout << "超过文件上限！" << endl;
-
-
+		cout << "16 files already! No more files！" << endl;
 }
+
 void do_Delete()
 {
 	//delete filename
@@ -472,8 +349,6 @@ void do_Delete()
 	}
 	if (flag)
 	{
-		//注意应该清除占用的内存
-
 		//Type filename
 		int address;
 		for (int i = 0; i < FileInfo[curID].size(); i++)
@@ -528,7 +403,6 @@ void do_Delete()
 			FileCluster[reset_addr[w]].nextNum = reset_addr[w];
 		}
 
-		//清除文件信息
 		vector<UFD>::iterator it;
 		for (it = FileInfo[curID].begin(); it != FileInfo[curID].end(); it++)
 		{
@@ -539,7 +413,7 @@ void do_Delete()
 				break;
 			}
 		}
-		//清除状态栏
+
 		vector<UOF>::iterator it1;
 		for (it1 = FileState[curID].begin(); it1 != FileState[curID].end(); it1++)
 		{
@@ -550,10 +424,10 @@ void do_Delete()
 			}
 		}
 
-		cout << "删除成功!" << endl;
+		cout << "success!" << endl;
 	}
 	else
-		cout << "文件已经撤销!" << endl;
+		cout << "File not exists!" << endl;
 
 
 }
@@ -565,30 +439,40 @@ void do_Open()
 	ss << cmd_in.cmdNum[2];
 	int temp;
 	ss >> temp;
-	//判断是否有权限,还没做呢......
 	int flag = 0;
-	for (int i = 0; i < FileState[curID].size(); i++)
-	{
-		if (strcmp(FileState[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
-		{
+	cout<<"You have opened: "<<countOpen<<" files!"<<endl;
+	if(countOpen == 4)
+    {
+        cout<<"You have opened 4 files! No more!";
+    }
+    else
+    {
+        for (int i = 0; i < FileState[curID].size(); i++)
+        {
+            if (strcmp(FileState[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
+            {
 			FileState[curID][i].state = 1;
+			countOpen++;
 			flag = 1;
 			break;
-		}
-	}
-	if (flag)
-		cout << "打开文件成功!" << endl;
-	else
-	{
-		strcpy(StateInput.filename, cmd_in.cmdNum[1].c_str());
-		StateInput.protect = temp;
-		StateInput.state = 1;
-		StateInput.read_poit = StateInput.write_poit = 0;
-		FileState[curID].push_back(StateInput);
-		cout << "打开文件成功！" << endl;
-	}
+            }
+        }
+        if (flag)
+            cout << "Open success!" << endl;
+        else
+        {
+            strcpy(StateInput.filename, cmd_in.cmdNum[1].c_str());
+            StateInput.protect = temp;
+            StateInput.state = 1;
+            StateInput.read_poit = StateInput.write_poit = 0;
+            FileState[curID].push_back(StateInput);
+            cout << "You have opened this file！" << endl;
+        }
+    }
+
 
 }
+
 void do_Close()
 {
 	//close filename
@@ -598,7 +482,8 @@ void do_Close()
 		if (strcmp((*it).filename, cmd_in.cmdNum[1].c_str()) == 0)
 		{
 			FileState[curID].erase(it);
-			cout << "关闭文件成功！" << endl;
+			countOpen--;
+			cout << "success!" << endl;
 			break;
 		}
 	}
@@ -630,7 +515,7 @@ void do_Write()
 			}
 			else
 			{
-				cout << "没有写的权限!" << endl;
+				cout << "Permission denied!" << endl;
 				return;
 			}
 		}
@@ -655,21 +540,25 @@ void do_Write()
 			break;
 		}
 	}
-            //注意：此处发生了更改！
-			cout << "请输入buff的内容：" << endl;
+            cout<<address<<endl;
+            // find the last block
+			while (FileCluster[address].nextNum != address)
+				address = FileCluster[address].nextNum;
+            cout<<address<<endl;
+
+
+			cout << "Please write：" << endl;
 			gets(buf);
 			fflush(stdin);
+            cout<<buf;
 
-	        //strcpy(buf, cmd_in.cmd_num[2].c_str());
 
 			int wbegin;
 			wbegin = FileState[curID][index].write_poit;
+			cout<<curID<<" "<<index<<endl;
+			cout<<wbegin<<endl;
 
-			//找到写指针所在的最后一个磁盘
-			while (FileCluster[address].nextNum != address)
-				address = FileCluster[address].nextNum;
-
-			vector <int> newspace_num;//计算将要占用的物理块的数量
+			vector <int> newspace_num;// for calculate block size
 			newspace_num.clear();
 
 			//int num = (256-wbegin+temp) / 256-1;
@@ -681,24 +570,23 @@ void do_Write()
 			}
 
 			newspace_num.push_back(address);
-
-			//cout << newspace_num.size() << endl;//
-
 			for (int i = 0; i < FileCluster.size(); i++)
 			{
 				if (newspace_num.size() == num+1)
 					break;
-				if (FileCluster[i].is_data == 0)
+
+                int ran = rand() % 68;
+				if (FileCluster[ran].is_data == 0)
 				{
-					newspace_num.push_back(i);
-					FileCluster[i].is_data = 1;
+					newspace_num.push_back(ran);
+					FileCluster[ran].is_data = 1;
 				}
 			}
-
 			for (int k = 0; k < newspace_num.size() - 1; k++)
 			{
 				FileCluster[newspace_num[k]].nextNum = newspace_num[k + 1];
 			}
+			// write data!
 			for (int i = 0; i < temp; i++)
 			{
 				if (wbegin == 256)
@@ -710,14 +598,12 @@ void do_Write()
 				wbegin++;
 			}
 
-			//更新写指针
+			// refresh write pointer
 			FileState[curID][index].write_poit = wbegin;
-			cout << "磁盘写入成功!" << endl;
+			cout << "Done~ Please sysc!" << endl;
 			return;
 
 }
-
-//write_poit记录最终磁盘的写指针，read_poit记录全局总数的读指针的位置。
 
 void do_Read()
 {
@@ -732,13 +618,13 @@ void do_Read()
 	{
 		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
 		{
-			if (FileInfo[curID][i].protect == 0 || FileInfo[curID][i].protect == 2)//判断权限
+			if (FileInfo[curID][i].protect == 0 || FileInfo[curID][i].protect == 2)// permission check
 			{
 				break;
 			}
 			else
 			{
-				cout << "没有读的权限!" << endl;
+				cout << "Permission denied!" << endl;
 				return;
 			}
 		}
@@ -785,37 +671,17 @@ void do_Read()
 
 	FileState[curID][index].read_poit = rbegin;
 
-	cout << "读出的数据是：" << endl;
+	cout << "read out：" << endl;
 	for (int i = 0; i < temp; i++)
 		cout << buf[i];
 	cout << endl;
 
 }
-void do_Help()
-{
-	cout << "login	userName pwd	用户登陆" << endl;
-	cout << "logout	用户登出" << endl;
-	cout << "register usrName pwd   用户注册" << endl;
-	cout << "passwd	oldPwd  newPwd    修改用户口令" << endl;
-	cout << "open   filename mode   打开文件" << endl;
-	cout << "close  filename   关闭文件" << endl;
-	cout << "mkfile	 filename mode	  建立文件" << endl;
-	cout << "rm	 filename   删除文件" << endl;
-	cout << "write	filename buffer nbytes   写文件" << endl;
-	cout << "read 	filename buffer nbytes   读文件" << endl;
-	cout << "ls   列出该用户下所有文件" << endl;
-	cout << "chmod	filename mode  	 改变文件权限" << endl;
-	cout << "chown	filename new_owner    改变文件拥有者" << endl;
-	cout << "mv	srcFile desFile	   改变文件名" << endl;
-	cout << "copy   srcFile desFile   文件拷贝" << endl;
-	cout << "type	filename     显示文件内容" << endl;
-	cout << "exit   退出程序" << endl;
-	cout << "sysc   同步到磁盘 " << endl;
-}
+
 
 void doTempWrite()
 {
-	//Write	filename buffer nbytes 写文件   物理空间68
+	//Write	filename buffer nbytes
 
 	char buf[1024];
 	stringstream ss;
@@ -828,13 +694,13 @@ void doTempWrite()
 	{
 		if (strcmp(FileInfo[curID][i].filename, cmd_in.cmdNum[1].c_str()) == 0)
 		{
-			if (FileInfo[curID][i].protect == 1 || FileInfo[curID][i].protect == 2)//判断权限
+			if (FileInfo[curID][i].protect == 1 || FileInfo[curID][i].protect == 2)
 			{
 				break;
 			}
 			else
 			{
-				cout << "没有写的权限!" << endl;
+				cout << "Permission denied!" << endl;
 				return;
 			}
 		}
@@ -849,7 +715,6 @@ void doTempWrite()
 			break;
 		}
 	}
-	//起始物理块
 	int address;
 	for (int i = 0; i < FileInfo[curID].size(); i++)
 	{
@@ -859,23 +724,18 @@ void doTempWrite()
 			break;
 		}
 	}
-	//注意：此处发生了更改！
-	/*cout << "请输入buff的内容：" << endl;
-	gets(buf);
-	fflush(stdin);*/
-
 
 	strcpy(buf, cmd_in.cmdNum[2].c_str());
 
 	int wbegin;
 	wbegin = FileState[curID][index].write_poit;
 
-	//找到写指针所在的最后一个磁盘
 	while (FileCluster[address].nextNum != address)
 		address = FileCluster[address].nextNum;
 
-	vector <int> newspace_num;//计算将要占用的物理块的数量
+	vector <int> newspace_num;
 	newspace_num.clear();
+	newspace_num.push_back(address);
 
 	//int num = (256-wbegin+temp) / 256-1;
 	if (temp <= 256 - wbegin)
@@ -885,9 +745,11 @@ void doTempWrite()
 		num = ceil((temp - (256 - wbegin))*1.0 / 256);
 	}
 
-	newspace_num.push_back(address);
 
-	//cout << newspace_num.size() << endl;//
+
+	cout << newspace_num.size() << endl;
+
+
 
 	for (int i = 0; i < FileCluster.size(); i++)
 	{
@@ -914,12 +776,31 @@ void doTempWrite()
 		FileCluster[address].data[wbegin] = buf[i];
 		wbegin++;
 	}
-
-	//更新写指针
 	FileState[curID][index].write_poit = wbegin;
-	cout << "磁盘写入成功!" << endl;
+	cout << "success!" << endl;
 	return;
 
+}
+
+void do_Help()
+{
+	cout << "登陆:\t\tlogin userName pwd" << endl;
+	cout << "登出:\t\tlogout	" << endl;
+	cout << "注册:\t\tregister usrName pwd" << endl;
+	cout << "修改用户口令:\tpasswd	oldPwd  newPwd" << endl;
+	cout << "打开文件:\topen   filename mode" << endl;
+	cout << "关闭文件:\tclose  filename" << endl;
+	cout << "建立文件:\tmkfile	 filename mode" << endl;
+	cout << "删除文件:\trm	 filename" << endl;
+	cout << "写文件:\twrite	filename buffer nbytes" << endl;
+	cout << "读文件:\tread 	filename buffer nbytes" << endl;
+	cout << "列出所有文件:\tls" << endl;
+	cout << "改变文件权限:\tchmod	filename mode" << endl;
+	cout << "改变文件拥有者:\tchown	filename new_owner" << endl;
+	cout << "改变文件名:\tmv	srcFile desFile" << endl;
+	cout << "显示文件内容:\ttype	filename" << endl;
+	cout << "退出程序:\texit" << endl;
+	cout << "同步到磁盘:\tsysc" << endl;
 }
 
 void do_Clear()

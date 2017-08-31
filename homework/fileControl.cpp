@@ -1,45 +1,59 @@
-#include "common.h"
-#include "MFD.h"
 #include<stdio.h>
 #include<cstring>
 #include<iostream>
 #include<vector>
+#include "common.h"
+#include "MFD.h"
 using namespace std;
 
-
+//use claims in main
 extern vector<MFD> UsrInfo;
-extern int num;
-extern MFD UsrInput;
-extern int Headnum;
 extern vector< vector<UOF> > FileState;
+extern vector< vector<UFD> > FileInfo;
+extern vector< cluster> FileCluster;
+extern int Headnum;
+extern int countOpen;
+extern MFD UsrInput;
 extern UFD FileInput;
 extern UOF StateInput;
 extern cluster ClusterInput;
-extern vector < vector<UFD> > FileInfo;
-extern vector< cluster> FileCluster;
 
+/*
+*        FileControl is a module cooperate with
+*        MFD as well as disk.txt, in order to
+*        simulate the job of real disk
+*/
 
+// function for initiate file system
 void initFiletoRom()
-{
+{   /*
+    *     This file system is modeled depends on a txt file
+    *     named 'disk.txt' in the same dir
+    *     the txt file contains the most important message
+    *     such as MFD, UFD, UOF and disk usage status
+    */
 	FILE *streamInit;
 	if ((streamInit = fopen("disk.txt", "r")) == NULL)
 	{
-		cout << "从磁盘中读入时失败！" << endl;
-		return ;
+		cout << "Failed when reading the disk！" << endl;
+		return;
 	}
-
-	//读入用户信息
+	/*
+	*       loading MFD
+	*       char usrname[14];
+	*       char usrpass[14];
+	*       int link;
+	*/
 	fscanf(streamInit, "%d", &Headnum);
 	int alreadynum;
 	int ret;
 	alreadynum = 0;
-	//需要再处理，最好以\n分割
 	while (alreadynum<Headnum&&(ret = fscanf(streamInit, "%s %s %d", &UsrInput.usrname, &UsrInput.usrpass, &UsrInput.link)) != -1)
 	{
 		UsrInfo.push_back(UsrInput);
 		alreadynum++;
 	}
-	//初始化文件信息
+	// File info initializing
 	vector<UFD> t;
 	for (int i = 0; i < UsrInfo.size(); i++)
 	{
@@ -51,50 +65,52 @@ void initFiletoRom()
 		FileState.push_back(temp);
 	}
 
-	//读入
 	/*
-	char filename[14];
-	int mode;
-	int length;
-	int addr;
+	*      loading UFD:
+	*      char filename[14];
+	*      int mode;
+	*      int length;
+	*      int addr;
 	*/
 	for (int i = 0; i < UsrInfo.size(); i++)
 	{
 		fscanf(streamInit, "%d", &Headnum);
 	    alreadynum = 0;
-
-		//需要再处理，最好以\n分割
 		while (alreadynum<Headnum && (ret = fscanf(streamInit, "%s %d %d %d", &FileInput.filename, &FileInput.protect, &FileInput.length, &FileInput.addr)) != -1)
 		{
 			FileInfo[i].push_back(FileInput);
 			alreadynum++;
 		}
 	}
-	/*char filename[14];
-	int mode;
-	int state; //0建立,1打开
-	int read_poit; //读写指针
-	int write_poit;*/
+	/*
+	*      loading UOF
+	*      char filename[14];
+	*      int mode;
+	*      int state; //0: exists and close,1: open
+	*      int read_poit;
+	*      int write_poit;
+	*/
 	for (int i = 0; i < UsrInfo.size(); i++)
 	{
 		fscanf(streamInit, "%d", &Headnum);
 	    alreadynum = 0;
-		//需要再处理，最好以\n分割
 		while (alreadynum<Headnum && (ret = fscanf(streamInit, "%s %d %d %d %d", &StateInput.filename, &StateInput.protect, &StateInput.state, &StateInput.read_poit,&StateInput.write_poit)) != -1)
 		{
 			FileState[i].push_back(StateInput);
+			if (StateInput.state == 1)
+                countOpen++;
 			alreadynum++;
 		}
 	}
 
 	/*
-	int next_num;
-	int is_data;
-	char data[256];*/
-	//fscanf(streamInit, "%d", &Headnum);
+	*       loading cluster
+	*       int next_num;
+	*       int is_data;
+	*       char data[256];
+	*/
     alreadynum = 0;
 	char Tempbuf[256];
-	//需要再处理，最好以\n分割
 	int total = 0;
 	char c;
 	while (total < 68)
@@ -113,9 +129,6 @@ void initFiletoRom()
 		}
 		else
 		{
-			//初始化
-			//FileCluster[alreadynum].next_num = alreadynum;
-			//FileCluster[alreadynum].is_data = 0;
 			ClusterInput.nextNum = alreadynum;
 			ClusterInput.is_data = 0;
 			strcpy(ClusterInput.data, Tempbuf);
@@ -127,7 +140,7 @@ void initFiletoRom()
 
 	fclose(streamInit);
 }
-
+// function for output to disk
 void out_to_file()
 {
 	FILE* fd;
@@ -138,10 +151,11 @@ void out_to_file()
 	fprintf(fd, "\n");
 
 	/*
-	char filename[14];
-	int mode;
-	int length;
-	int addr;
+	*      loading UFD:
+	*      char filename[14];
+	*      int mode;
+	*      int length;
+	*      int addr;
 	*/
 	for (int i = 0; i < FileInfo.size(); i++)
 	{
@@ -153,11 +167,14 @@ void out_to_file()
 		fprintf(fd, "\n");
 	}
 
-	/*char filename[14];
-	int mode;
-	int state; //0建立,1打开
-	int read_poit; //读写指针
-	int write_poit;*/
+	/*
+	*      loading UOF
+	*      char filename[14];
+	*      int mode;
+	*      int state; //0: exists and close,1: open
+	*      int read_poit;
+	*      int write_poit;
+	*/
 	for (int i = 0; i < FileState.size(); i++)
 	{
 		fprintf(fd, "%d%c", FileState[i].size(), ' ');
@@ -168,15 +185,14 @@ void out_to_file()
 		fprintf(fd, "\n");
 	}
 
-	/*int num;
-	int next_num;
-	int is_data;
-	char data[256];*/
-
-	//fprintf(fd, "%d%c", FileCluster.size(), ' ');
+	/*
+	*       loading cluster
+	*       int next_num;
+	*       int is_data;
+	*       char data[256];
+	*/
 	for (int i = 0; i < FileCluster.size(); i++)
 	{
-		//fprintf(fd, "%d %d %s%c",FileCluster[i].next_num, FileCluster[i].is_data, FileCluster[i].data, ' ');
 		fprintf(fd, "%d %d%c", FileCluster[i].nextNum, FileCluster[i].is_data,' ');
 		fputs(FileCluster[i].data, fd);
 		fprintf(fd, "\n");

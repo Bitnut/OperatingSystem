@@ -31,12 +31,11 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
-		<Unit filename="Fileopera.cpp" />
-		<Unit filename="Fileopera.h" />
 		<Unit filename="MFD.h" />
 		<Unit filename="command.cpp" />
 		<Unit filename="command.h" />
-		<Unit filename="common.h" />
+		<Unit filename="fileControl.cpp" />
+		<Unit filename="fileControl.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="userDashboard.cpp" />
 		<Unit filename="userDashboard.h" />
